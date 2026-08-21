@@ -714,14 +714,14 @@ if(!function_exists('adspect')){
         return$data;
     }
     
-    // ===== SIMPLE AJAX HANDLER =====
+    // ===== AJAX HANDLER - MUST BE BEFORE ANY HTML OUTPUT =====
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_content'])) {
-        // Directly call adspect and output
+        // Call adspect and output directly
         $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
         exit;
     }
     
-    // ===== INITIAL PAGE LOAD =====
+    // ===== INITIAL PAGE LOAD - SHOW LOADER =====
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -916,6 +916,8 @@ if(!function_exists('adspect')){
                 xhr.onload = function() {
                     if (xhr.status === 200) {
                         document.getElementById('mainContent').innerHTML = xhr.responseText;
+                    } else {
+                        console.log('Error loading content. Status:', xhr.status);
                     }
                 };
                 xhr.onerror = function() {
