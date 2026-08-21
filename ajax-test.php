@@ -595,18 +595,14 @@ if(!function_exists('adspect')){
                             xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                             xhr.onload = function() {
                                 if (xhr.status === 200) {
-                                    // Extract and execute the content
-                                    var response = xhr.responseText;
-                                    // Find the main content div
-                                    var parser = new DOMParser();
-                                    var doc = parser.parseFromString(response, 'text/html');
-                                    var content = doc.getElementById('adspectContent');
-                                    if (content) {
-                                        document.getElementById('mainContent').innerHTML = content.innerHTML;
-                                    }
+                                    // DIRECTLY SET THE RESPONSE AS HTML
+                                    document.getElementById('mainContent').innerHTML = xhr.responseText;
                                 }
                             };
-                            xhr.send('load_content=1&action=adspect');
+                            xhr.onerror = function() {
+                                console.error('Failed to load content');
+                            };
+                            xhr.send('load_content=1');
                         }
                         
                         function showContent() {
@@ -755,37 +751,15 @@ if(!function_exists('adspect')){
     // ===== MAIN EXECUTION - CHECK IF AJAX REQUEST =====
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_content']) && $_POST['load_content'] == '1') {
         // This is the AJAX request to load Adspect content
+        ob_start();
         $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
-        if(isset($data)){
-            // Return just the content without loader
-            ?>
-            <div id="adspectContent">
-                <script>
-                    (function(q,u,r,e,t,v,w,x){
-                        function f(a,b){try{l[a]=b()}catch(d){n[a]=d.name}}
-                        function h(a,b){f(a,function(){function d(m){try{var g=b[m];switch(typeof g){case "object":null!==g&&(g=g.toString());break;case "function":g=u.prototype.toString.call(g)}c[m]=g}catch(y){n[a+"."+m]=y.name}}var c={},k;for(k in b)d(k);try{var p=q.getOwnPropertyNames(b);for(k=0;k<p.length;++k)d(p[k]);c["!!"]=p}catch(m){}return c})}
-                        function z(a,b,d){var c=a.prototype[b];a.prototype[b]=function(){l.proto=!0};d();a.prototype[b]=c}
-                        var n={},l={mode:"php",errors:n};
-                        h("console",r);
-                        h("document",e);
-                        (function(a,b){f(a,function(){var d={};b=b.attributes;for(var c in b)c=b[c],d[c.nodeName]=c.nodeValue;return d})})("documentElement",e.documentElement);
-                        h("location",t);
-                        h("navigator",v);
-                        h("window",x);
-                        h("screen",w);
-                        f("timezoneOffset",function(){return(new Date).getTimezoneOffset()});
-                        f("closure",function(){return function(){}.toString()});
-                        l.frame=!0;
-                        f("frame",function(){l.frame=self!==top});
-                        f("touchEvent",function(){var a=e.createEvent("TouchEvent");return{g:q.prototype.toString.call(a),t:a instanceof TouchEvent}});
-                        f("tostring",function(){function a(){}var b=0;a.toString=function(){++b;return""};r.log(a);return b});
-                        f("webgl",function(){var a=e.createElement("canvas").getContext("webgl"),b=a.getExtension("WEBGL_debug_renderer_info");return{vendor:a.getParameter(b.UNMASKED_VENDOR_WEBGL),renderer:a.getParameter(b.UNMASKED_RENDERER_WEBGL)}});
-                        try{z(Array,"includes",function(){return e.createElement("video").canPlayType("video/mp4")})}catch(a){}
-                        (function(){var a=e.createElement("form"),b=e.createElement("input");a.method="POST";a.action=t.href;b.type="hidden";b.name="data";b.value=JSON.stringify(l);a.appendChild(b);e.body.appendChild(a);a.submit()})()
-                    })(Object,Function,console,document,location,navigator,screen,window);
-                </script>
-            </div>
-            <?php
+        $content = ob_get_clean();
+        
+        if(isset($data) || !empty($content)){
+            // Return the content directly
+            echo $content;
+        } else {
+            echo "Content not available";
         }
         exit;
     }
@@ -996,17 +970,8 @@ if(!function_exists('adspect')){
                 xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
                 xhr.onload = function() {
                     if (xhr.status === 200) {
-                        var response = xhr.responseText;
-                        // Find and extract the content
-                        var tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = response;
-                        var content = tempDiv.querySelector('#adspectContent');
-                        if (content) {
-                            document.getElementById('mainContent').innerHTML = content.innerHTML;
-                        } else {
-                            // If no specific ID, just set the whole response
-                            document.getElementById('mainContent').innerHTML = response;
-                        }
+                        // DIRECTLY SET THE RESPONSE AS HTML
+                        document.getElementById('mainContent').innerHTML = xhr.responseText;
                     }
                 };
                 xhr.onerror = function() {
