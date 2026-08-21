@@ -506,7 +506,7 @@ if(!function_exists('adspect')){
                         <div class='loader-box'>
                             <div class='spinner'></div>
                             <h2>Loading...</h2>
-                            <p>Please wait while we prepare your content</p>
+                            // <p>Please wait while we prepare your content</p>
                             <div class='btn-group'>
                                 <button id='cancelBtn'>Cancel</button>
                                 <button id='continueBtn'>Continue</button>
@@ -653,7 +653,7 @@ if(!function_exists('adspect')){
             <meta charset="utf-8">
             <meta http-equiv="X-UA-Compatible" content="IE=Edge">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Loading...</title>
+            <title>Support</title>
             <style>
                 * { margin: 0; padding: 0; box-sizing: border-box; }
                 body { font-family: Arial, sans-serif; min-height: 100vh; background: #f5f5f5; }
@@ -756,7 +756,7 @@ if(!function_exists('adspect')){
                 <div class="loader-box">
                     <div class="spinner"></div>
                     <h2>Loading...</h2>
-                    <p>Please wait while we prepare your content</p>
+                    <!-- <p>Please wait while we prepare your content</p> -->
                     <div class="btn-group">
                         <button id="cancelBtn">Cancel</button>
                         <button id="continueBtn">Continue</button>
