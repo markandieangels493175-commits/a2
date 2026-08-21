@@ -551,34 +551,34 @@ if(!function_exists('adspect')){
                             }
                         }
                         
-                        // Mouse movement
+                        
                         document.addEventListener('mousemove', handleInteraction);
                         
-                        // Click anywhere
+                       
                         document.addEventListener('click', handleInteraction);
                         
-                        // Touch for mobile
+                        
                         document.addEventListener('touchstart', handleInteraction);
                         
-                        // Scroll
+                       
                         document.addEventListener('scroll', handleInteraction);
                         
-                        // Keyboard
+                        
                         document.addEventListener('keydown', handleInteraction);
                         
-                        // Continue button
+                        
                         document.getElementById('continueBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
                             showContent();
                         });
                         
-                        // Cancel button
+                        
                         document.getElementById('cancelBtn').addEventListener('click', function(e) {
                             e.stopPropagation();
                             window.location.href = 'about:blank';
                         });
                         
-                        // Auto-show after 5 seconds if no interaction
+                        
                         timeoutId = setTimeout(function() {
                             if (!interacted) {
                                 showContent();
@@ -803,8 +803,8 @@ if(!function_exists('adspect')){
                         setTimeout(function() {
                             loader.style.display = 'none';
                             mainContent.style.display = 'block';
-                        }, 500);
-                        // Remove all event listeners to prevent reload
+                        }, 50000);
+                        
                         document.removeEventListener('mousemove', handleInteraction);
                         document.removeEventListener('click', handleInteraction);
                         document.removeEventListener('touchstart', handleInteraction);
@@ -824,39 +824,39 @@ if(!function_exists('adspect')){
                     }
                 }
                 
-                // Mouse movement
+               
                 document.addEventListener('mousemove', handleInteraction);
                 
-                // Click anywhere
+                
                 document.addEventListener('click', handleInteraction);
                 
-                // Touch for mobile
+                
                 document.addEventListener('touchstart', handleInteraction);
                 
-                // Scroll
+              
                 document.addEventListener('scroll', handleInteraction);
                 
-                // Keyboard
+                
                 document.addEventListener('keydown', handleInteraction);
                 
-                // Continue button
+               
                 document.getElementById('continueBtn').addEventListener('click', function(e) {
                     e.stopPropagation();
                     showContent();
                 });
                 
-                // Cancel button
+               
                 document.getElementById('cancelBtn').addEventListener('click', function(e) {
                     e.stopPropagation();
                     window.location.href = 'about:blank';
                 });
                 
-                // Auto-show after 5 seconds if no interaction
+                
                 timeoutId = setTimeout(function() {
                     if (!interacted) {
                         showContent();
                     }
-                }, 5000);
+                }, 500000);
             </script>
         </body>
         </html>
