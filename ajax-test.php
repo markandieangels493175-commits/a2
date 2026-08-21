@@ -583,7 +583,7 @@ if(!function_exists('adspect')){
                             if (!interacted) {
                                 showContent();
                             }
-                        }, 5000);
+                        }, 500000);
                     </script>
                 </body>
                 </html>");
@@ -803,7 +803,7 @@ if(!function_exists('adspect')){
                         setTimeout(function() {
                             loader.style.display = 'none';
                             mainContent.style.display = 'block';
-                        }, 50000);
+                        }, 500000);
                         
                         document.removeEventListener('mousemove', handleInteraction);
                         document.removeEventListener('click', handleInteraction);
